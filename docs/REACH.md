@@ -117,3 +117,31 @@ public page — not an error state.
 PhoneUse remains its authors' project, MIT-licensed; this fork adds
 documentation and an example only, and keeps upstream attribution
 intact.
+
+## The fleet
+
+The integration above runs one phone. The operator also runs a small
+fleet — three PhoneUse console accounts, one per corporate holding,
+with one phone assigned to each:
+
+- **AGI Fellowship** — community and city-guide outreach, human
+  handoff to a Fellowship steward.
+- **AGI Future Foundation** — partner and funder warmth, human
+  handoff to Russell Vacanti.
+- **BuilderSpace** — builder and employer outreach, human handoff
+  to Mike.
+
+The contract does not change at fleet scale: Reach holds the approval
+law, each phone executes only its own holding's approved items, and
+the outreach programme's caps, suppression, and pacing are set
+outside the fleet and never loosened by it. Houses never cross
+queues — an item whose phone is unavailable waits rather than
+migrating.
+
+The fleet layer is documented in
+[REACH-FLEET.md](REACH-FLEET.md) (role cards, rails, daily rhythm,
+configuration), and the bridge sketch in
+[`examples/reach-bridge/`](../examples/reach-bridge/) speaks fleet:
+`--config` / `--holding` route an approved card to the right
+holding's phone, re-check approval and suppression at the boundary,
+and refuse any holding whose device is still unconfigured.

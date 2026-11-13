@@ -26,6 +26,19 @@ Usage:
 
     python3 reach_bridge.py approved.json [--dry-run]
 
+Fleet mode (three holdings, one phone each -- see docs/REACH-FLEET.md):
+
+    python3 reach_bridge.py approved.json \
+        --config fleet-config.json --holding fellowship [--dry-run]
+
+    The config selects the holding's api_base and device_id. Fleet mode
+    adds three checks before submitting: the input must carry
+    "approved": true; it must not carry "suppressed": true; and if it
+    carries "text_sha256", the hash must match the SHA-256 of "text".
+    A holding whose device_id is still the config placeholder is
+    refused before any network call. Without --config, behaviour is
+    exactly the single-phone sketch above.
+
 Environment:
 
     PHONEUSE_API_URL   default http://127.0.0.1:8765
@@ -38,6 +51,7 @@ Exit codes: 0 submitted (or dry-run printed), 1 usage/input error,
 2 API unreachable or refused.
 """
 
+import hashlib
 import json
 import os
 import sys
@@ -53,6 +67,27 @@ TASK_TEMPLATE = (
     "Type the following message exactly as written, character for "
     "character, do not change any word, and send it:\n\n{text}"
 )
+
+
+# The device_id written in fleet-config.example.json. A holding still
+# carrying it has no confirmed console device yet, and fleet mode
+# refuses to run it.
+PLACEHOLDER_DEVICE_ID = "REPLACE_WITH_CONSOLE_DEVICE_ID"
+
+
+def load_fleet_config(path):
+    """Load a fleet config file; return its holdings dict or None."""
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            config = json.load(fh)
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"cannot read fleet config {path}: {exc}", file=sys.stderr)
+        return None
+    holdings = config.get("holdings")
+    if not isinstance(holdings, dict) or not holdings:
+        print(f"fleet config {path} has no \"holdings\" object", file=sys.stderr)
+        return None
+    return holdings
 
 
 def load_key():
@@ -80,8 +115,29 @@ def call(method, path, key, body=None):
 
 
 def main(argv):
+    global API_URL
     dry_run = "--dry-run" in argv
-    args = [a for a in argv[1:] if not a.startswith("--")]
+    config_path = None
+    holding_name = None
+    args = []
+    tokens = list(argv[1:])
+    i = 0
+    while i < len(tokens):
+        tok = tokens[i]
+        if tok in ("--config", "--holding"):
+            if i + 1 >= len(tokens):
+                print(f"{tok} needs a value", file=sys.stderr)
+                return 1
+            if tok == "--config":
+                config_path = tokens[i + 1]
+            else:
+                holding_name = tokens[i + 1]
+            i += 2
+        elif tok.startswith("--"):
+            i += 1
+        else:
+            args.append(tok)
+            i += 1
     if len(args) > 1:
         print(__doc__)
         return 1
@@ -106,6 +162,51 @@ def main(argv):
     # The invariant, checked before anything leaves this process:
     assert text in task and task.endswith(text), "approved text was altered by composition"
 
+    fleet_device_id = None
+    if config_path is not None:
+        holdings = load_fleet_config(config_path)
+        if holdings is None:
+            return 1
+        if not holding_name:
+            holding_name = msg.get("holding")
+        if not holding_name or holding_name not in holdings:
+            print("fleet mode needs --holding <name> naming one of: "
+                  + ", ".join(sorted(holdings)), file=sys.stderr)
+            return 1
+        entry = holdings[holding_name]
+        # Fleet safety checks -- the boundary re-checks Reach's law:
+        if msg.get("approved") is not True:
+            print("fleet mode refuses: input does not carry \"approved\": true "
+                  "(no human approval marker, nothing is submitted)",
+                  file=sys.stderr)
+            return 1
+        if msg.get("suppressed") is True:
+            print("fleet mode refuses: input is marked suppressed "
+                  "(do-not-contact is law, checked again at the bridge)",
+                  file=sys.stderr)
+            return 1
+        expected_hash = msg.get("text_sha256")
+        if expected_hash is not None:
+            actual_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
+            if actual_hash != expected_hash:
+                print("fleet mode refuses: text_sha256 does not match the text "
+                      "(the text to execute is not provably the approved text)",
+                      file=sys.stderr)
+                return 1
+        fleet_device_id = entry.get("device_id")
+        if not fleet_device_id or fleet_device_id == PLACEHOLDER_DEVICE_ID:
+            print(f"fleet mode refuses: holding \"{holding_name}\" still has "
+                  "the placeholder device_id; confirm the console device "
+                  "inventory and set the real device_id in your private "
+                  "fleet config", file=sys.stderr)
+            return 1
+        api_base = entry.get("api_base")
+        if api_base:
+            API_URL = api_base.rstrip("/")
+        print(f"fleet mode: holding \"{holding_name}\" "
+              f"({entry.get('holding', holding_name)}) -> device "
+              f"{fleet_device_id} via {API_URL}")
+
     key = load_key()
 
     try:
@@ -118,6 +219,13 @@ def main(argv):
         return 2
 
     device_id = msg.get("device_id")
+    if fleet_device_id:
+        if device_id and device_id != fleet_device_id:
+            print("fleet mode refuses: input device_id "
+                  f"{device_id} does not match the config's device "
+                  f"{fleet_device_id} for this holding", file=sys.stderr)
+            return 1
+        device_id = fleet_device_id
     if not device_id:
         if not key:
             print("no API key available (PHONEUSE_API_KEY / PHONEUSE_TOKEN_FILE) "

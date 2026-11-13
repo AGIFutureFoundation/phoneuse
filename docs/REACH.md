@@ -52,10 +52,17 @@ All of it is the one authenticated API on `http://127.0.0.1:8765`
 | Deterministic alternative | `POST /api/devices/{id}/actions`, `/api/workflows`, `/api/jobs` | Direct actions and recorded step sequences, for clients that don't want a model in the loop. |
 | Agent alternative | MCP server (`platform/start-mcp.sh`) | Same API over stdio: `list_devices` → `acquire_device` → `screenshot` / `page_source` → `device_action` → `release_device`. |
 
-The handover task text is composed by the client from a **fixed
-instruction template** with the approved message embedded verbatim —
-see [`examples/reach-bridge/`](../examples/reach-bridge/) for a runnable
-sketch that asserts the approved text survives composition unchanged.
+Two client shapes, one invariant — the approved message itself is
+never altered:
+
+- The Reach PWA sends the approved text **as** the task payload,
+  byte-for-byte (`task` === the card's text; its test suite asserts
+  the equality against the captured request body).
+- A Mac-side bridge composes a **fixed instruction template** with
+  the approved message embedded verbatim — see
+  [`examples/reach-bridge/`](../examples/reach-bridge/) for a runnable
+  sketch that asserts the approved text survives composition
+  unchanged.
 
 ## The browser reality, stated plainly
 

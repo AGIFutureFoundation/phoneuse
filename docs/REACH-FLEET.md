@@ -1,4 +1,4 @@
-# The Reach fleet — three accounts, three holdings, three phones
+# The Reach fleet — five phones, three holdings, one console account
 
 *This document is an additive addition in the AGIFutureFoundation fork of
 PhoneUse Local. It describes how the fork's operator runs a small fleet of
@@ -9,30 +9,37 @@ the fleet layer on top of it.*
 
 ## The fleet at a glance
 
-The operator runs **three PhoneUse console accounts**, one per corporate
-holding, and assigns **one phone per account**. A phone only ever works its
-own holding's queue.
+The operator runs a fleet of **five phones on one PhoneUse console
+account** (`agent@agifellowship.church`). Three are working phones, one
+per corporate holding; the fourth runs the Reach booth demo and the
+fifth is a cold reserve. A working phone only ever works its own
+holding's queue, and manages that holding's mailbox — the fleet works
+the outreach across the holdings' mailboxes from the assigned phones.
+The assignments below were **approved by Mike on 2026-11-13**; they are
+the fleet's settled record, not a proposal. All five phones are Google
+Pixel 7 Pro (US), paid until 13 Dec 2026.
 
-| Phone | Holding | Console account | Queue it serves | Human handoff |
+| Phone | Device ID | Manages mailbox | Queue it serves | Human handoff |
 | --- | --- | --- | --- | --- |
-| Fellowship phone | AGI Fellowship | `agent@agifellowship.church` | Community and city-guide outreach | A Fellowship steward |
-| Foundation phone | AGI Future Foundation | `x@agifuturefoundation.org` | Partner and funder warmth | Russell Vacanti |
-| BuilderSpace phone | BuilderSpace (AGI Corp) | `x@agicorp.network` | Builder and employer outreach | Mike |
+| Fellowship phone | `ACP6BC9P8ZEML2Z1` | `agent@agifellowship.church` | Community and city-guide outreach | A Fellowship steward |
+| Foundation phone | `ACP6BD9Q64XX8XE9` | `x@agifuturefoundation.org` | Partner and funder warmth | Russell Vacanti |
+| BuilderSpace phone | `ACP6B99O2IWFKAA4` | `x@agicorp.network` | Builder and employer outreach | Mike |
+| Demo phone | `ATP68K8IGMSLAIBB` | — | Reach booth and demo work | Mike |
+| Reserve phone | `ACP6BD9PTE0T2ASG` | — | Cold reserve — not in service | — |
 
-**PENDING:** the console device inventory — which physical console phone is
-attached to which account — is still being confirmed at the time of writing
-(2026-11-13). Until it lands, every device reference in this repository is
-the placeholder `REPLACE_WITH_CONSOLE_DEVICE_ID` (see
-[`examples/reach-bridge/fleet-config.example.json`](../examples/reach-bridge/fleet-config.example.json)).
-No real device ID appears in this repo, and none should be committed when
-the inventory lands — device IDs live in the operator's local fleet config
-and in the console, nowhere else.
+Device IDs are fleet inventory, not secrets: they are the fleet's
+public-to-the-team record, and they belong in this document and in
+[`examples/reach-bridge/fleet-config.example.json`](../examples/reach-bridge/fleet-config.example.json).
+API keys are a different matter entirely — no key ever appears in this
+repo (see Configuration).
 
 ## Role cards
 
 ### Fellowship phone — community and city-guide outreach
 
 - **Holding:** AGI Fellowship (California nonprofit religious corporation).
+- **Device:** Google Pixel 7 Pro (US), console device `ACP6BC9P8ZEML2Z1`.
+- **Manages mailbox:** `agent@agifellowship.church`.
 - **Work:** community outreach for the Fellowship's city guides and local
   resource work — churches, shelters, food banks, and community partners in
   the guide cities; Sparks of Light programme conversation.
@@ -45,6 +52,8 @@ and in the console, nowhere else.
 
 - **Holding:** AGI Future Foundation (California nonprofit public benefit
   corporation).
+- **Device:** Google Pixel 7 Pro (US), console device `ACP6BD9Q64XX8XE9`.
+- **Manages mailbox:** `x@agifuturefoundation.org`.
 - **Work:** partner and funder follow-up — programme applications,
   credit/partnership correspondence, interview and press threads,
   keeping warm relationships warm.
@@ -57,12 +66,31 @@ and in the console, nowhere else.
 ### BuilderSpace phone — builder and employer outreach
 
 - **Holding:** BuilderSpace, the network's builder tour (AGI Corp lane).
+- **Device:** Google Pixel 7 Pro (US), console device `ACP6B99O2IWFKAA4`.
+- **Manages mailbox:** `x@agicorp.network`.
 - **Work:** builder and employer outreach for tour towns — session
   follow-ups, partner venues, employer connections for builders.
 - **Voice:** direct and practical; BuilderSpace pages carry no other
   holding's branding.
 - **Human handoff:** anyone who asks for a human leaves the automated
   thread and is flagged to Mike the same day.
+
+### Demo phone — Reach booth and demo work
+
+- **Device:** Google Pixel 7 Pro (US), console device `ATP68K8IGMSLAIBB`.
+- **Work:** the Reach demo — booth walkthroughs, judging, and trying
+  fleet behaviour where nothing real is at stake.
+- **Rails:** the demo phone carries no holding's live queue and sends
+  nothing on any holding's behalf.
+
+### Reserve phone — cold reserve
+
+- **Device:** Google Pixel 7 Pro (US), console device `ACP6BD9PTE0T2ASG`.
+- **State:** not in service — it ships disabled in the fleet config
+  (`"enabled": false`). It joins the fleet only when a working phone
+  is out of action and an assignment is approved; it does not silently
+  inherit the down phone's queue, because houses never cross without a
+  ruling.
 
 ## Division of labour
 
@@ -100,7 +128,7 @@ them:
   counters do not reset per device, and at the cap the item waits.
 - **Pacing stays paced.** Social posting follows the standing pacing
   rule (one platform at a time, minutes between posts on the same
-  platform). Three phones do not triple the pace.
+  platform). Five phones do not multiply the pace.
 - **Houses never cross.** A Fellowship item never runs on the Foundation
   phone; a BuilderSpace queue never borrows the Fellowship phone. If the
   right phone is unavailable, the item waits — it does not migrate.
@@ -136,8 +164,10 @@ Fleet configuration is an operator-local file, modelled by
 `examples/reach-bridge/fleet-config.example.json`:
 
 - **`device_id`** — per holding, the console device ID of that holding's
-  phone. Placeholder in the repo; the real value goes only in the
-  operator's local copy of the config.
+  phone. The example config carries the fleet's approved real IDs as
+  the team record (assignments approved by Mike, 2026-11-13); the
+  bridge reads the operator's private copy of the config, and still
+  refuses any holding whose `device_id` is left as the placeholder.
 - **`api_base`** — the PhoneUse API base the bridge submits to. The
   verified surface in this fork is the local API at
   `http://127.0.0.1:8765` (`GET /health`, `POST /api/ai/tasks`, Bearer
@@ -153,17 +183,20 @@ Fleet configuration is an operator-local file, modelled by
   process (`PHONEUSE_API_KEY`). **A key never appears in this repo, in
   the fleet config, or in any committed file** — the example config has
   no key field by design.
-- **Accounts** — the three console accounts above are the fleet's whole
-  account inventory. Signing in, password resets, and plan changes are
-  the account holder's actions in the console, never the bridge's.
+- **Accounts** — one console account, `agent@agifellowship.church`,
+  hosts all five phones; each working phone manages its holding's
+  mailbox (table above). Signing in, password resets, and plan changes
+  are the account holder's actions in the console, never the bridge's.
 
 ## Status (2026-11-13)
 
-- Three console accounts exist, one per holding, under the identities in
-  the table above; per the account holder, the accounts were set up on
-  the console's $149 plan tier under the event's hackathon promo.
-- Device-to-account assignment: **PENDING** console inventory — the
-  fleet config ships with placeholders and the bridge refuses to run a
+- Five phones are provisioned on the one console account, all Google
+  Pixel 7 Pro (US), paid until 13 Dec 2026; per the account holder,
+  they were set up on the console's $149 plan tier under the event's
+  hackathon promo.
+- Device assignments are **approved** (Mike, 2026-11-13) and recorded
+  in the table above and in the example fleet config; the reserve
+  phone ships disabled in the config, and the bridge refuses to run a
   holding whose `device_id` is still the placeholder.
 - The bridge's fleet mode (`--config` / `--holding`) is implemented in
   `examples/reach-bridge/reach_bridge.py` against the verified local

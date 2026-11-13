@@ -145,3 +145,19 @@ configuration), and the bridge sketch in
 `--config` / `--holding` route an approved card to the right
 holding's phone, re-check approval and suppression at the boundary,
 and refuse any holding whose device is still unconfigured.
+
+### Fleet assignments (approved 2026-11-13)
+
+All five phones are Google Pixel 7 Pro (US) on the one console
+account (`agent@agifellowship.church`), paid until 13 Dec 2026:
+
+| Phone | Device ID | Assignment |
+| --- | --- | --- |
+| Fellowship phone | `ACP6BC9P8ZEML2Z1` | AGI Fellowship — manages `agent@agifellowship.church` |
+| Foundation phone | `ACP6BD9Q64XX8XE9` | AGI Future Foundation — manages `x@agifuturefoundation.org` |
+| BuilderSpace phone | `ACP6B99O2IWFKAA4` | BuilderSpace — manages `x@agicorp.network` |
+| Demo phone | `ATP68K8IGMSLAIBB` | Reach booth/demo |
+| Reserve phone | `ACP6BD9PTE0T2ASG` | Cold reserve (disabled in the fleet config) |
+
+The full fleet record — role cards, rails, daily rhythm, and
+configuration — lives in [REACH-FLEET.md](REACH-FLEET.md).
